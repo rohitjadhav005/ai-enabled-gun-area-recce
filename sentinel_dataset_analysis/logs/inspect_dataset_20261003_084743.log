@@ -1,0 +1,9 @@
+2026-10-03 08:47:43 | INFO    | ======================================================================
+2026-10-03 08:47:43 | INFO    | SEN12MS-CR-TS dataset inspection (Phase 1) - READ ONLY
+2026-10-03 08:47:43 | INFO    | Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-03 08:47:43 | INFO    | Analysis root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
+2026-10-03 08:47:43 | INFO    | ======================================================================
+2026-10-03 08:47:43 | INFO    | Scanning for GeoTIFF files under: C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-03 08:47:45 | INFO    | Discovered 15360 GeoTIFF file(s) in 1.83 s
+2026-10-03 08:47:45 | WARNING | Limiting scan to the first 200 file(s) (smoke-test mode).
+2026-10-03 08:47:49 | INFO    | Scanned 200 file(s) in 3.70 s (54.0 files/s)

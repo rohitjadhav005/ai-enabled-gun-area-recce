@@ -1,0 +1,12 @@
+# Requirements for sentinel_dataset_analysis (Phase 1 inspection)
+# Install with:  pip install -r sentinel_dataset_analysis\requirements.txt
+#
+# Verified working versions on the target machine (Python 3.13, Anaconda).
+pandas>=2.0
+numpy>=1.24
+rasterio>=1.3
+matplotlib>=3.7
+
+# rasterio pulls in the GDAL bindings it needs, so no separate GDAL/osgeo
+# install is required. matplotlib is only used by scripts/visualize_dataset.py.
+# geopandas/shapely are NOT used by these scripts.

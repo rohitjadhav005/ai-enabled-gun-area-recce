@@ -1,0 +1,14 @@
+2026-10-03 08:50:39 | INFO    | ======================================================================
+2026-10-03 08:50:39 | INFO    | SEN12MS-CR-TS dataset inspection (Phase 1) - READ ONLY
+2026-10-03 08:50:39 | INFO    | Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-03 08:50:39 | INFO    | Analysis root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
+2026-10-03 08:50:39 | INFO    | ======================================================================
+2026-10-03 08:50:39 | INFO    | Scanning for GeoTIFF files under: C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-03 08:50:42 | INFO    | Discovered 15360 GeoTIFF file(s) in 2.44 s
+2026-10-03 08:50:42 | WARNING | Limiting scan to the first 1000 file(s) (smoke-test mode).
+2026-10-03 08:50:48 | INFO    |   ... 500/1000 files processed (87.8 files/s)
+2026-10-03 08:50:57 | INFO    |   ... 1000/1000 files processed (68.6 files/s)
+2026-10-03 08:50:57 | INFO    | Scanned 1000 file(s) in 14.57 s (68.6 files/s)
+2026-10-03 08:50:57 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\dataset_inventory.csv (1000 rows)
+2026-10-03 08:50:57 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\roi_metadata.csv (1 rows)
+2026-10-03 08:50:57 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\image_relationships.csv (0 rows)

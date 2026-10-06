@@ -1,0 +1,145 @@
+==============================================================================
+SEN12MS-CR-TS SATELLITE DATASET INSPECTION - SUMMARY REPORT (Phase 1)
+==============================================================================
+Generated at        : 2026-10-04 23:12:08
+Dataset root        : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+Analysis output root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
+Mode                : READ-ONLY inspection (no files modified)
+
+------------------------------------------------------------------------------
+1. TOTALS
+------------------------------------------------------------------------------
+Total GeoTIFF files recognised : 15,360
+Unrecognised .tif files        : 0
+Unique geographic partitions   : 1
+Unique ROI collections         : 3
+Unique ROIs (roi_key)          : 7
+Unique acquisition indices     : 4
+Unique acquisition dates       : 29
+Unique patch ids               : 285
+
+------------------------------------------------------------------------------
+2. FILES PER GEOGRAPHIC PARTITION
+------------------------------------------------------------------------------
+  asiaWest_n               15,360
+
+------------------------------------------------------------------------------
+3. FILES PER SENSOR / MODALITY
+------------------------------------------------------------------------------
+  S1          7,680   SAR (C-band, VV+VH)
+  S2          7,680   Optical (13 bands)
+
+------------------------------------------------------------------------------
+4. FILES PER ROI
+------------------------------------------------------------------------------
+  roi_key                         S1      S2   total    acq  sensors
+  asiaWest_n/1868/127          1,080   1,080   2,160      4  S1|S2
+  asiaWest_n/1970/112          1,080   1,080   2,160      4  S1|S2
+  asiaWest_n/1970/57           1,020   1,020   2,040      4  S1|S2
+  asiaWest_n/1970/83           1,140   1,140   2,280      4  S1|S2
+  asiaWest_n/2017/115          1,140   1,140   2,280      4  S1|S2
+  asiaWest_n/2017/130          1,080   1,080   2,160      4  S1|S2
+  asiaWest_n/2017/69           1,140   1,140   2,280      4  S1|S2
+
+------------------------------------------------------------------------------
+5. ACQUISITION DATES
+------------------------------------------------------------------------------
+  asiaWest_n/1868/127
+      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
+      S2: 2018-01-08, 2018-01-23, 2018-02-02, 2018-02-12
+  asiaWest_n/1970/112
+      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
+      S2: 2018-01-06, 2018-01-21, 2018-01-31, 2018-02-10
+  asiaWest_n/1970/57
+      S1: 2018-01-12, 2018-01-24, 2018-02-05, 2018-02-17
+      S2: 2018-01-05, 2018-01-20, 2018-01-30, 2018-02-14
+  asiaWest_n/1970/83
+      S1: 2018-01-04, 2018-01-16, 2018-01-28, 2018-02-09
+      S2: 2018-01-07, 2018-01-17, 2018-02-01, 2018-02-11
+  asiaWest_n/2017/115
+      S1: 2018-01-06, 2018-01-18, 2018-01-30, 2018-02-17
+      S2: 2018-01-09, 2018-01-19, 2018-01-29, 2018-02-13
+  asiaWest_n/2017/130
+      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
+      S2: 2018-01-06, 2018-01-16, 2018-01-31, 2018-02-10
+  asiaWest_n/2017/69
+      S1: 2018-01-08, 2018-01-20, 2018-02-01, 2018-02-13
+      S2: 2018-01-08, 2018-01-23, 2018-02-02, 2018-02-12
+
+------------------------------------------------------------------------------
+6. IMAGE PROPERTIES (GeoTIFF header metadata)
+------------------------------------------------------------------------------
+  sensor    width  height  bands   dtype          crs
+  S1                                              
+  S2                                              
+
+------------------------------------------------------------------------------
+7. SAR <-> OPTICAL PATCH RELATIONSHIPS
+------------------------------------------------------------------------------
+  Candidate SAR/optical pairs  : 7,680
+  Verified pairs (same date)   : 0
+  Unverified pairs             : 7,680
+  Date delta (days) min/median/max: 0 / 2.0 / 7
+  NOTE: pairs are matched on roi_key + acquisition_index + patch_id.
+        Non-zero date deltas mean the SAR and optical acquisitions were
+        NOT captured on the same day and are therefore UNVERIFIED pairs.
+
+------------------------------------------------------------------------------
+8. MISSING OR INCONSISTENT FILES
+------------------------------------------------------------------------------
+  Unreadable TIFFs            : 0
+  Empty (zero-byte) TIFFs     : 0
+  Header read skipped         : 0
+  Header not read (no rasterio): 15,360
+  Unrecognised .tif files     : 0
+  Duplicate filenames         : 0
+
+------------------------------------------------------------------------------
+9. KNOWN LIMITATIONS OF THIS METADATA
+------------------------------------------------------------------------------
+  * Everything here is derived from filenames + GeoTIFF headers only.
+    No pixel values were read, so radiometric content is not validated.
+  * Acquisition dates come from the filename; they are not cross-checked
+    against sensor metadata inside the GeoTIFF.
+  * SAR and optical acquisitions frequently occur on DIFFERENT days, so
+    same-index pairs must be treated as UNVERIFIED until confirmed.
+  * Geographic coordinates / tile extents are only recorded via the CRS;
+    bounding boxes were intentionally not derived in this phase.
+  * No target labels or terrain classes exist in the source data.
+
+------------------------------------------------------------------------------
+10. SUITABILITY FOR THE NEXT STAGE
+------------------------------------------------------------------------------
+  The dataset is structurally consistent and fully readable. It is
+  SUITABLE for reconnaissance-oriented preprocessing (patch pairing,
+  normalisation, index computation, split generation) once the
+  unverified SAR/optical pairing policy is agreed.
+
+------------------------------------------------------------------------------
+11. RECOMMENDED CLASSIFICATION STRUCTURE (PROPOSAL - NOT CREATED)
+------------------------------------------------------------------------------
+  The source data only contains SAR (S1) and optical (S2) imagery.
+  It has NO terrain, feature or annotation data, so those folders are
+  marked optional and must NOT be created until such data exists.
+
+  sentinel_recce_dataset/
+  |-- raw_data/                 # (read-only link/pointer to originals)
+  |-- processed_data/
+  |     |-- SAR/                # Sentinel-1 derived products
+  |     |-- OPTICAL/            # Sentinel-2 derived products
+  |     |-- TERRAIN/            # OPTIONAL - create only if DEM data obtained
+  |     \-- FEATURES/           # OPTIONAL - create only if features derived
+  |-- metadata/                 # inventory + relationship CSVs
+  |-- annotations/              # empty until labels exist
+  |-- splits/
+  |     |-- train/
+  |     |-- validation/
+  |     \-- test/
+  \-- scripts/
+
+  Suggested leaf naming inside SAR/ and OPTICAL/:
+      <geographic_partition>/<roi_collection>/<roi_id>/acq_<index>/patch_<id>.tif
+
+==============================================================================
+END OF SUMMARY - see metadata/ for machine-readable tables.
+==============================================================================

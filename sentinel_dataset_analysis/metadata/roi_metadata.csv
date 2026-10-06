@@ -1,0 +1,8 @@
+geographic_partition,roi_collection,roi_id,roi_key,sensors_present,total_image_count,s1_image_count,s2_image_count,acquisition_count,acquisition_indices,unique_date_count,s1_date_min,s1_date_max,s2_date_min,s2_date_max,patch_id_min,patch_id_max,patches_per_acquisition_median,width,height,s1_band_count,s2_band_count,s1_data_type,s2_data_type,crs,unreadable_count,empty_count,duplicate_filename_count,notes
+asiaWest_n,1868,127,asiaWest_n/1868/127,S1|S2,2160,1080,1080,4,0|1|2|3,7,2018-01-07,2018-02-12,2018-01-08,2018-02-12,0,269,540.0,,,,,,,,0,0,0,1 shared acquisition date(s) found.
+asiaWest_n,1970,112,asiaWest_n/1970/112,S1|S2,2160,1080,1080,4,0|1|2|3,7,2018-01-07,2018-02-12,2018-01-06,2018-02-10,0,269,540.0,,,,,,,,0,0,0,1 shared acquisition date(s) found.
+asiaWest_n,1970,57,asiaWest_n/1970/57,S1|S2,2040,1020,1020,4,0|1|2|3,8,2018-01-12,2018-02-17,2018-01-05,2018-02-14,0,254,510.0,,,,,,,,0,0,0,SAR and optical acquisition dates do not overlap exactly.
+asiaWest_n,1970,83,asiaWest_n/1970/83,S1|S2,2280,1140,1140,4,0|1|2|3,8,2018-01-04,2018-02-09,2018-01-07,2018-02-11,0,284,570.0,,,,,,,,0,0,0,SAR and optical acquisition dates do not overlap exactly.
+asiaWest_n,2017,115,asiaWest_n/2017/115,S1|S2,2280,1140,1140,4,0|1|2|3,8,2018-01-06,2018-02-17,2018-01-09,2018-02-13,0,284,570.0,,,,,,,,0,0,0,SAR and optical acquisition dates do not overlap exactly.
+asiaWest_n,2017,130,asiaWest_n/2017/130,S1|S2,2160,1080,1080,4,0|1|2|3,7,2018-01-07,2018-02-12,2018-01-06,2018-02-10,0,269,540.0,,,,,,,,0,0,0,1 shared acquisition date(s) found.
+asiaWest_n,2017,69,asiaWest_n/2017/69,S1|S2,2280,1140,1140,4,0|1|2|3,7,2018-01-08,2018-02-13,2018-01-08,2018-02-12,0,284,570.0,,,,,,,,0,0,0,1 shared acquisition date(s) found.

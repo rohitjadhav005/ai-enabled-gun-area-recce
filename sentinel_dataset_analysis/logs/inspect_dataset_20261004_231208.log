@@ -1,0 +1,59 @@
+2026-10-04 23:12:08 | INFO    | ======================================================================
+2026-10-04 23:12:08 | INFO    | SEN12MS-CR-TS dataset inspection (Phase 1) - READ ONLY
+2026-10-04 23:12:08 | INFO    | Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-04 23:12:08 | INFO    | Analysis root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
+2026-10-04 23:12:08 | INFO    | ======================================================================
+2026-10-04 23:12:08 | WARNING | rasterio is not installed - TIFF headers cannot be read. Install it with:  pip install rasterio  (or run with --skip-raster).
+2026-10-04 23:12:08 | INFO    | Scanning for GeoTIFF files under: C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-04 23:12:11 | INFO    | Discovered 15360 GeoTIFF file(s) in 2.48 s
+2026-10-04 23:12:12 | INFO    |   ... 500/15360 files processed (1601.9 files/s)
+2026-10-04 23:12:12 | INFO    |   ... 1000/15360 files processed (1532.4 files/s)
+2026-10-04 23:12:12 | INFO    |   ... 1500/15360 files processed (1600.9 files/s)
+2026-10-04 23:12:12 | INFO    |   ... 2000/15360 files processed (1578.9 files/s)
+2026-10-04 23:12:13 | INFO    |   ... 2500/15360 files processed (1520.2 files/s)
+2026-10-04 23:12:13 | INFO    |   ... 3000/15360 files processed (1436.5 files/s)
+2026-10-04 23:12:14 | INFO    |   ... 3500/15360 files processed (1460.8 files/s)
+2026-10-04 23:12:14 | INFO    |   ... 4000/15360 files processed (1476.3 files/s)
+2026-10-04 23:12:14 | INFO    |   ... 4500/15360 files processed (1511.0 files/s)
+2026-10-04 23:12:14 | INFO    |   ... 5000/15360 files processed (1531.8 files/s)
+2026-10-04 23:12:15 | INFO    |   ... 5500/15360 files processed (1561.8 files/s)
+2026-10-04 23:12:15 | INFO    |   ... 6000/15360 files processed (1591.3 files/s)
+2026-10-04 23:12:15 | INFO    |   ... 6500/15360 files processed (1609.0 files/s)
+2026-10-04 23:12:16 | INFO    |   ... 7000/15360 files processed (1593.8 files/s)
+2026-10-04 23:12:16 | INFO    |   ... 7500/15360 files processed (1579.8 files/s)
+2026-10-04 23:12:16 | INFO    |   ... 8000/15360 files processed (1555.9 files/s)
+2026-10-04 23:12:17 | INFO    |   ... 8500/15360 files processed (1550.9 files/s)
+2026-10-04 23:12:17 | INFO    |   ... 9000/15360 files processed (1546.1 files/s)
+2026-10-04 23:12:17 | INFO    |   ... 9500/15360 files processed (1556.4 files/s)
+2026-10-04 23:12:17 | INFO    |   ... 10000/15360 files processed (1596.1 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 10500/15360 files processed (1640.7 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 11000/15360 files processed (1673.2 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 11500/15360 files processed (1716.6 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 12000/15360 files processed (1759.4 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 12500/15360 files processed (1795.5 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 13000/15360 files processed (1824.5 files/s)
+2026-10-04 23:12:18 | INFO    |   ... 13500/15360 files processed (1859.1 files/s)
+2026-10-04 23:12:19 | INFO    |   ... 14000/15360 files processed (1894.4 files/s)
+2026-10-04 23:12:19 | INFO    |   ... 14500/15360 files processed (1926.4 files/s)
+2026-10-04 23:12:19 | INFO    |   ... 15000/15360 files processed (1959.9 files/s)
+2026-10-04 23:12:19 | INFO    | Scanned 15360 file(s) in 7.75 s (1981.8 files/s)
+2026-10-04 23:12:20 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\dataset_inventory.csv (15360 rows)
+2026-10-04 23:12:20 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\roi_metadata.csv (7 rows)
+2026-10-04 23:12:20 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\image_relationships.csv (7680 rows)
+2026-10-04 23:12:21 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\dataset_summary.txt
+2026-10-04 23:12:21 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\validation_report.txt
+2026-10-04 23:12:21 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\folder_structure.txt
+2026-10-04 23:12:21 | INFO    | ----------------------------------------------------------------------
+2026-10-04 23:12:21 | INFO    | INSPECTION COMPLETE
+2026-10-04 23:12:21 | INFO    | ----------------------------------------------------------------------
+2026-10-04 23:12:21 | INFO    | Files inspected        : 15360
+2026-10-04 23:12:21 | INFO    | ROIs identified        : 7
+2026-10-04 23:12:21 | INFO    | Candidate SAR/optical pairs : 7680
+2026-10-04 23:12:21 | INFO    | Unreadable/empty files : 0
+2026-10-04 23:12:21 | INFO    | Outputs written to:
+2026-10-04 23:12:21 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata
+2026-10-04 23:12:21 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports
+2026-10-04 23:12:21 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\logs
+2026-10-04 23:12:21 | INFO    | ----------------------------------------------------------------------
+2026-10-04 23:12:21 | INFO    | Original dataset was NOT modified in any way.
+2026-10-04 23:12:21 | INFO    | Next: review reports/dataset_summary.txt before requesting Phase 2.

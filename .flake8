@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 100
+exclude = .git,__pycache__,.venv,venv,build,dist
+per-file-ignores =
+    sentinel_dataset_analysis/scripts/*: W503, W504
