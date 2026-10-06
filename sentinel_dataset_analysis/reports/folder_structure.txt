@@ -1,11 +1,11 @@
 ==============================================================================
 DATASET FOLDER STRUCTURE (Phase 1 - read-only snapshot)
 ==============================================================================
-Generated at : 2026-10-04 23:12:08
-Root         : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+Generated at : 2026-10-07 00:53:54
+Root         : C:\Users\rohii\OneDrive\Desktop\sentineldataset\Dataset
 Counts shown as [N tif] indicate GeoTIFF files directly inside a folder.
 
-sentineldataset/
+Dataset/
 `-- asiaWest_n/
     |-- ROIs1868/
     |   `-- 127/

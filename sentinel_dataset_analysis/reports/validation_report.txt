@@ -1,13 +1,13 @@
 ==============================================================================
 DATASET VALIDATION REPORT (Phase 1 - quality & integrity checks)
 ==============================================================================
-Generated at : 2026-10-04 23:12:08
-Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+Generated at : 2026-10-07 00:53:54
+Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset\Dataset
 
 ------------------------------------------------------------------------------
 A. FILE INTEGRITY
 ------------------------------------------------------------------------------
-  unknown        15,360
+  not_checked    5
 
 ------------------------------------------------------------------------------
 B. UNREADABLE / EMPTY FILES

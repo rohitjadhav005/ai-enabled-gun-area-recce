@@ -9,8 +9,8 @@ based Sentinel-1 (SAR) / Sentinel-2 (optical) reconnaissance dataset.
 
 What this script does
 ---------------------
-1. Recursively scans the dataset root (default:
-   C:\\Users\\rohii\\OneDrive\\Desktop\\sentineldataset).
+1. Recursively scans the dataset root (auto-detected as the 'Dataset'
+   subfolder next to the project, or supplied via --dataset-root).
 2. Identifies geographic partitions, ROI collections, ROI ids, sensors,
    acquisition sequence folders, acquisition dates and patch identifiers.
 3. Reads GeoTIFF *headers only* (never pixel data) to capture width, height,
@@ -64,10 +64,10 @@ import pandas as pd
 # Optional dependency: rasterio (GeoTIFF header reader)
 # ---------------------------------------------------------------------------
 try:
-    import rasterio
+    import rasterio  # type: ignore[import-untyped]  # pyrefly: ignore [missing-import]
 
     RASTERIO_AVAILABLE = True
-except Exception:  # pragma: no cover - environment dependent
+except ImportError:  # pragma: no cover - rasterio is an optional dependency
     rasterio = None
     RASTERIO_AVAILABLE = False
 
@@ -75,8 +75,11 @@ except Exception:  # pragma: no cover - environment dependent
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATASET_ROOT = DEFAULT_PROJECT_ROOT.parent
+DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parents[1]  # sentinel_dataset_analysis/
+DEFAULT_WORKSPACE_ROOT = DEFAULT_PROJECT_ROOT.parent         # sentineldataset/
+
+# Candidate sub-folder names that hold the actual .tif data (tried in order).
+DATASET_SUBFOLDER_CANDIDATES = ["Dataset", "dataset", "data", "Data"]
 
 IMAGE_EXTENSIONS = (".tif", ".tiff")
 
@@ -93,6 +96,32 @@ FILENAME_RE = re.compile(
     r"_patch_(?P<patch_id>\d+)\.tiff?$",
     re.IGNORECASE,
 )
+
+
+# ---------------------------------------------------------------------------
+# Dataset root auto-detection
+# ---------------------------------------------------------------------------
+def find_dataset_root(workspace_root: Path) -> Optional[Path]:
+    """
+    Auto-detect the dataset root directory.
+
+    Tries each name in DATASET_SUBFOLDER_CANDIDATES as a direct child of
+    workspace_root. Falls back to workspace_root itself when it directly
+    contains partition directories that hold ROIs* subfolders.
+    Returns None when nothing suitable is found.
+    """
+    for candidate in DATASET_SUBFOLDER_CANDIDATES:
+        p = workspace_root / candidate
+        if p.is_dir():
+            return p
+    # Fallback: workspace_root itself has partition/ROIs* layout.
+    rois_re = re.compile(r"^ROIs\d+$", re.IGNORECASE)
+    for child in workspace_root.iterdir():
+        if child.is_dir():
+            for grandchild in child.iterdir():
+                if grandchild.is_dir() and rois_re.match(grandchild.name):
+                    return workspace_root
+    return None
 
 # Folders that must never be scanned / reported as dataset content.
 IGNORED_DIR_NAMES = {"sentinel_dataset_analysis", ".git", "__pycache__", ".ipynb_checkpoints"}
@@ -254,7 +283,7 @@ def find_tiff_files(
 
     elapsed = time.perf_counter() - started
     logger.info("Discovered %d GeoTIFF file(s) in %.2f s", len(found), elapsed)
-    found.sort()
+    found.sort(key=lambda p: str(p).lower())
     return found
 
 
@@ -703,9 +732,15 @@ def build_relationships_df(
     rel_df = pd.DataFrame(rows)
     if rel_df.empty:
         return pd.DataFrame(columns=RELATIONSHIP_COLUMNS)
-    rel_df = rel_df.sort_values(
-        ["roi_key", "acquisition_index", "patch_id"]
-    ).reset_index(drop=True)
+    # Sort numerically: acquisition_index and patch_id are stored as strings,
+    # so lexicographic order gives wrong results ("10" < "9", "100" < "2").
+    rel_df["_acq_sort"] = pd.to_numeric(rel_df["acquisition_index"], errors="coerce")
+    rel_df["_patch_sort"] = pd.to_numeric(rel_df["patch_id"], errors="coerce")
+    rel_df = (
+        rel_df.sort_values(["roi_key", "_acq_sort", "_patch_sort"])
+        .drop(columns=["_acq_sort", "_patch_sort"])
+        .reset_index(drop=True)
+    )
     return rel_df.reindex(columns=RELATIONSHIP_COLUMNS)
 
 
@@ -1157,8 +1192,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--dataset-root",
         type=Path,
-        default=DEFAULT_DATASET_ROOT,
-        help="Root folder that contains the dataset partitions (never modified).",
+        default=None,
+        help=(
+            "Root folder that contains the dataset partitions (never modified). "
+            "When omitted the script auto-detects it by looking for a 'Dataset' "
+            "subfolder next to the project root."
+        ),
     )
     parser.add_argument(
         "--project-root",
@@ -1199,8 +1238,22 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
 
-    dataset_root = args.dataset_root.resolve()
     project_root = args.project_root.resolve()
+
+    # ── Resolve dataset_root (auto-detect if not supplied) ──────────────
+    if args.dataset_root is not None:
+        dataset_root = args.dataset_root.resolve()
+    else:
+        detected = find_dataset_root(DEFAULT_WORKSPACE_ROOT)
+        if detected is None:
+            print(
+                f"Could not auto-detect the dataset root under '{DEFAULT_WORKSPACE_ROOT}'. "
+                "Expected a 'Dataset' subfolder containing partition directories. "
+                "Use --dataset-root to specify the path explicitly.",
+                file=sys.stderr,
+            )
+            return 2
+        dataset_root = detected.resolve()
 
     if not dataset_root.is_dir():
         print(f"Dataset root is not a directory: {dataset_root}", file=sys.stderr)

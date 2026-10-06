@@ -1,96 +1,64 @@
 ==============================================================================
 SEN12MS-CR-TS SATELLITE DATASET INSPECTION - SUMMARY REPORT (Phase 1)
 ==============================================================================
-Generated at        : 2026-10-04 23:12:08
-Dataset root        : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+Generated at        : 2026-10-07 00:53:54
+Dataset root        : C:\Users\rohii\OneDrive\Desktop\sentineldataset\Dataset
 Analysis output root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
 Mode                : READ-ONLY inspection (no files modified)
 
 ------------------------------------------------------------------------------
 1. TOTALS
 ------------------------------------------------------------------------------
-Total GeoTIFF files recognised : 15,360
+Total GeoTIFF files recognised : 5
 Unrecognised .tif files        : 0
 Unique geographic partitions   : 1
-Unique ROI collections         : 3
-Unique ROIs (roi_key)          : 7
-Unique acquisition indices     : 4
-Unique acquisition dates       : 29
-Unique patch ids               : 285
+Unique ROI collections         : 1
+Unique ROIs (roi_key)          : 1
+Unique acquisition indices     : 1
+Unique acquisition dates       : 1
+Unique patch ids               : 5
 
 ------------------------------------------------------------------------------
 2. FILES PER GEOGRAPHIC PARTITION
 ------------------------------------------------------------------------------
-  asiaWest_n               15,360
+  asiaWest_n               5
 
 ------------------------------------------------------------------------------
 3. FILES PER SENSOR / MODALITY
 ------------------------------------------------------------------------------
-  S1          7,680   SAR (C-band, VV+VH)
-  S2          7,680   Optical (13 bands)
+  S1              5   SAR (C-band, VV+VH)
 
 ------------------------------------------------------------------------------
 4. FILES PER ROI
 ------------------------------------------------------------------------------
   roi_key                         S1      S2   total    acq  sensors
-  asiaWest_n/1868/127          1,080   1,080   2,160      4  S1|S2
-  asiaWest_n/1970/112          1,080   1,080   2,160      4  S1|S2
-  asiaWest_n/1970/57           1,020   1,020   2,040      4  S1|S2
-  asiaWest_n/1970/83           1,140   1,140   2,280      4  S1|S2
-  asiaWest_n/2017/115          1,140   1,140   2,280      4  S1|S2
-  asiaWest_n/2017/130          1,080   1,080   2,160      4  S1|S2
-  asiaWest_n/2017/69           1,140   1,140   2,280      4  S1|S2
+  asiaWest_n/1868/127              5       0       5      1  S1
 
 ------------------------------------------------------------------------------
 5. ACQUISITION DATES
 ------------------------------------------------------------------------------
   asiaWest_n/1868/127
-      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
-      S2: 2018-01-08, 2018-01-23, 2018-02-02, 2018-02-12
-  asiaWest_n/1970/112
-      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
-      S2: 2018-01-06, 2018-01-21, 2018-01-31, 2018-02-10
-  asiaWest_n/1970/57
-      S1: 2018-01-12, 2018-01-24, 2018-02-05, 2018-02-17
-      S2: 2018-01-05, 2018-01-20, 2018-01-30, 2018-02-14
-  asiaWest_n/1970/83
-      S1: 2018-01-04, 2018-01-16, 2018-01-28, 2018-02-09
-      S2: 2018-01-07, 2018-01-17, 2018-02-01, 2018-02-11
-  asiaWest_n/2017/115
-      S1: 2018-01-06, 2018-01-18, 2018-01-30, 2018-02-17
-      S2: 2018-01-09, 2018-01-19, 2018-01-29, 2018-02-13
-  asiaWest_n/2017/130
-      S1: 2018-01-07, 2018-01-19, 2018-01-31, 2018-02-12
-      S2: 2018-01-06, 2018-01-16, 2018-01-31, 2018-02-10
-  asiaWest_n/2017/69
-      S1: 2018-01-08, 2018-01-20, 2018-02-01, 2018-02-13
-      S2: 2018-01-08, 2018-01-23, 2018-02-02, 2018-02-12
+      S1: 2018-01-07
+      S2: (none)
 
 ------------------------------------------------------------------------------
 6. IMAGE PROPERTIES (GeoTIFF header metadata)
 ------------------------------------------------------------------------------
   sensor    width  height  bands   dtype          crs
   S1                                              
-  S2                                              
 
 ------------------------------------------------------------------------------
 7. SAR <-> OPTICAL PATCH RELATIONSHIPS
 ------------------------------------------------------------------------------
-  Candidate SAR/optical pairs  : 7,680
-  Verified pairs (same date)   : 0
-  Unverified pairs             : 7,680
-  Date delta (days) min/median/max: 0 / 2.0 / 7
-  NOTE: pairs are matched on roi_key + acquisition_index + patch_id.
-        Non-zero date deltas mean the SAR and optical acquisitions were
-        NOT captured on the same day and are therefore UNVERIFIED pairs.
+  No candidate SAR/optical pairs were found.
 
 ------------------------------------------------------------------------------
 8. MISSING OR INCONSISTENT FILES
 ------------------------------------------------------------------------------
   Unreadable TIFFs            : 0
   Empty (zero-byte) TIFFs     : 0
-  Header read skipped         : 0
-  Header not read (no rasterio): 15,360
+  Header read skipped         : 5
+  Header not read (no rasterio): 0
   Unrecognised .tif files     : 0
   Duplicate filenames         : 0
 

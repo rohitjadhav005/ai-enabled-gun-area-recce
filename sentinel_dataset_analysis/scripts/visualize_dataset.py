@@ -9,14 +9,16 @@ Sentinel-2 (optical) reconnaissance dataset.
 
 What this script does
 ---------------------
-1. Resolves one SAR/optical patch triplet for a chosen ROI, acquisition index
+1. Auto-detects the dataset root by searching for the 'Dataset' subfolder
+   relative to the project root, so no hardcoded absolute paths are required.
+2. Resolves one SAR/optical patch triplet for a chosen ROI, acquisition index
    and patch id (same filename convention as inspect_dataset.py).
-2. Reads the GeoTIFF *pixel* data (unlike the Phase 1 header-only inspector).
-3. Contrast-stretches each band and renders one figure:
+3. Reads the GeoTIFF *pixel* data (unlike the Phase 1 header-only inspector).
+4. Contrast-stretches each band and renders one figure:
        - S1 VV  (SAR backscatter, dB, grayscale)
        - S1 VH  (SAR backscatter, dB, grayscale)
        - S2 true-colour RGB (B4/B3/B2) or false-colour (B8/B4/B3)
-4. Saves the figure as PNG inside sentinel_dataset_analysis/visualizations/.
+5. Saves the figure as PNG inside sentinel_dataset_analysis/visualizations/.
 
 `--overview` instead renders a small metadata summary (S1 vs S2 file counts per
 ROI and unique acquisition dates) from metadata/*.csv written by
@@ -29,6 +31,22 @@ What this script NEVER does
 * It performs no scientific correction: bands are only contrast-stretched for
   display, and S1 values are shown as delivered (dB).
 
+Real dataset structure (SEN12MS-CR-TS)
+---------------------------------------
+  <dataset_root>/
+  └── <partition>/            e.g. asiaWest_n
+      └── ROIs<number>/       e.g. ROIs1868, ROIs1970, ROIs2017
+          └── <roi_id>/       e.g. 127, 112, 57
+              ├── S1/
+              │   └── <acq_idx>/   e.g. 0, 1, 2, 3
+              │       └── s1_ROIs<number>_<roi_id>_ImgNo_<acq_idx>_<date>_patch_<id>.tif
+              └── S2/
+                  └── <acq_idx>/
+                      └── s2_ROIs<number>_<roi_id>_ImgNo_<acq_idx>_<date>_patch_<id>.tif
+
+ROI key format: "<partition>/<roi_number>/<roi_id>"
+  e.g.  asiaWest_n/1868/127
+
 Usage (PowerShell, from the repository root)
 --------------------------------------------
     python sentinel_dataset_analysis\\scripts\\visualize_dataset.py
@@ -36,6 +54,7 @@ Usage (PowerShell, from the repository root)
     python sentinel_dataset_analysis\\scripts\\visualize_dataset.py --false-color
     python sentinel_dataset_analysis\\scripts\\visualize_dataset.py --list
     python sentinel_dataset_analysis\\scripts\\visualize_dataset.py --overview
+    python sentinel_dataset_analysis\\scripts\\visualize_dataset.py --dataset-root "C:\\path\\to\\Dataset"
 """
 
 from __future__ import annotations
@@ -45,7 +64,7 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -65,8 +84,20 @@ except Exception:  # pragma: no cover - environment dependent
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATASET_ROOT = DEFAULT_PROJECT_ROOT.parent
+# Path layout (resolved from this file's location):
+#   <project_root>/scripts/visualize_dataset.py
+#   => <project_root> == sentinel_dataset_analysis/
+#   => <workspace_root> == sentineldataset/   (one level up)
+# The actual image data lives in <workspace_root>/Dataset/
+DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parents[1]  # sentinel_dataset_analysis/
+DEFAULT_WORKSPACE_ROOT = DEFAULT_PROJECT_ROOT.parent         # sentineldataset/
+
+# Candidate sub-folder names (case-insensitive) that hold the actual .tif data.
+# The script tries them in order and uses the first one that exists.
+DATASET_SUBFOLDER_CANDIDATES = ["Dataset", "dataset", "data", "Data"]
+
+# Directories to always skip when searching for data.
+SKIP_DIRS = {"sentinel_dataset_analysis", "__pycache__", ".git", ".venv", "venv", "node_modules"}
 
 # SEN12MS band ordering (0-based indices).
 S1_BAND_NAMES = ("VV", "VH")
@@ -77,8 +108,15 @@ S2_BAND_NAMES = (
 TRUE_COLOR_BANDS = (3, 2, 1)   # R=B4, G=B3, B=B2
 FALSE_COLOR_BANDS = (7, 3, 2)  # R=B8 (NIR), G=B4, B=B3
 
+# Filename patterns used in SEN12MS-CR-TS:
+#   s1_ROIs1868_127_ImgNo_3_2018-02-12_patch_49.tif
+#   s2_ROIs1868_127_ImgNo_3_2018-02-12_patch_49.tif
+S1_FILENAME_RE = re.compile(r"^s1_", re.IGNORECASE)
+S2_FILENAME_RE = re.compile(r"^s2_", re.IGNORECASE)
 DATE_RE = re.compile(r"_(?P<date>\d{4}-\d{2}-\d{2})_patch_\d+\.tiff?$", re.IGNORECASE)
-SENSOR_DIR_RE = re.compile(r"^(?P<sensor>s[12])$", re.IGNORECASE)
+PATCH_ID_RE = re.compile(r"_patch_(?P<pid>\d+)\.tiff?$", re.IGNORECASE)
+IMGNO_RE = re.compile(r"_ImgNo_(?P<idx>\d+)_", re.IGNORECASE)
+ROIS_DIR_RE = re.compile(r"^ROIs(?P<num>\d+)$", re.IGNORECASE)
 
 # Display stretch defaults (percentiles of the finite pixel values).
 S1_STRETCH = (2.0, 98.0)   # SAR dB
@@ -98,10 +136,41 @@ def setup_logging(verbose: bool = False) -> logging.Logger:
     handler = logging.StreamHandler(stream=sys.stdout)
     handler.setLevel(logging.DEBUG if verbose else logging.INFO)
     handler.setFormatter(
-        logging.Formatter("%(asctime)s | %(levelname)-7s | %(message)s", "%Y-%m-%d %H:%M:%S")
+        logging.Formatter("%(levelname)-7s | %(message)s")
     )
     logger.addHandler(handler)
     return logger
+
+
+# ---------------------------------------------------------------------------
+# Dataset root auto-detection
+# ---------------------------------------------------------------------------
+def find_dataset_root(workspace_root: Path) -> Optional[Path]:
+    """
+    Auto-detect the dataset root directory.
+
+    Search strategy (in order):
+    1. Check if any of the DATASET_SUBFOLDER_CANDIDATES exists directly under
+       workspace_root and contains at least one partition directory with ROIs*.
+    2. Fall back to workspace_root itself if it directly contains ROIs-style
+       partition directories.
+
+    Returns the detected dataset root, or None if nothing is found.
+    """
+    # Strategy 1: look for a Dataset/ subfolder
+    for candidate in DATASET_SUBFOLDER_CANDIDATES:
+        candidate_path = workspace_root / candidate
+        if candidate_path.is_dir():
+            return candidate_path
+
+    # Strategy 2: workspace_root itself contains partitions with ROIs
+    for child in workspace_root.iterdir():
+        if child.is_dir() and child.name not in SKIP_DIRS:
+            for grandchild in child.iterdir():
+                if grandchild.is_dir() and ROIS_DIR_RE.match(grandchild.name):
+                    return workspace_root
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -185,22 +254,69 @@ def to_rgb(stack: np.ndarray, lo_pct: float, hi_pct: float, gamma: float = 1.0) 
 # Dataset navigation (read-only)
 # ---------------------------------------------------------------------------
 def list_roi_keys(dataset_root: Path) -> List[str]:
-    """Return available ROI keys as `<partition>/<roi_collection>/<roi_id>`."""
+    """
+    Return available ROI keys as ``<partition>/<roi_number>/<roi_id>``.
+
+    Real SEN12MS-CR-TS layout under dataset_root:
+        <partition>/ROIs<number>/<roi_id>/S1|S2/...
+
+    Examples of returned keys:
+        asiaWest_n/1868/127
+        asiaWest_n/1970/112
+    """
     keys: List[str] = []
     if not dataset_root.is_dir():
         return keys
+
     for partition in sorted(p for p in dataset_root.iterdir() if p.is_dir()):
-        if partition.name in {"sentinel_dataset_analysis", "__pycache__", ".git"}:
+        if partition.name in SKIP_DIRS:
             continue
         collections = sorted(
             p for p in partition.iterdir()
-            if p.is_dir() and p.name.upper().startswith("ROIS")
+            if p.is_dir() and ROIS_DIR_RE.match(p.name)
         )
         for collection in collections:
-            coll_num = collection.name[4:]  # strip "ROIs"
-            for roi_id in sorted(p for p in collection.iterdir() if p.is_dir()):
-                keys.append(f"{partition.name}/{coll_num}/{roi_id.name}")
+            roi_num = ROIS_DIR_RE.match(collection.name).group("num")  # type: ignore[union-attr]
+            for roi_dir in sorted(p for p in collection.iterdir() if p.is_dir()):
+                keys.append(f"{partition.name}/{roi_num}/{roi_dir.name}")
     return keys
+
+
+def scan_tif_counts(
+    dataset_root: Path,
+    roi_keys: List[str],
+    limit: int = 50,
+) -> Dict[str, Dict[str, int]]:
+    """
+    Return a dict mapping each roi_key -> {"S1": count, "S2": count}.
+
+    Scans only the first `limit` tif files per sensor folder to keep this
+    lightweight (lazy metadata inspection – no pixel data loaded).
+    """
+    counts: Dict[str, Dict[str, int]] = {}
+    for key in roi_keys:
+        parts = key.split("/")
+        if len(parts) < 3:
+            continue
+        partition, roi_num, roi_id = parts[0], parts[1], parts[2]
+        roi_dir = dataset_root / partition / f"ROIs{roi_num}" / roi_id
+        s1_count = 0
+        s2_count = 0
+        for sensor, counter in (("S1", "s1_count"), ("S2", "s2_count")):
+            sensor_dir = roi_dir / sensor
+            if sensor_dir.is_dir():
+                n = sum(
+                    1 for acq in sensor_dir.iterdir()
+                    if acq.is_dir()
+                    for f in acq.glob("*.tif*")
+                    if f.is_file()
+                )
+                if sensor == "S1":
+                    s1_count = n
+                else:
+                    s2_count = n
+        counts[key] = {"S1": s1_count, "S2": s2_count}
+    return counts
 
 
 def resolve_patch(
@@ -214,15 +330,59 @@ def resolve_patch(
     parts = [p for p in roi_key.replace("\\", "/").split("/") if p]
     if len(parts) < 3:
         return None
-    partition, roi_collection, roi_id = parts[0], parts[1], parts[2]
+    partition, roi_num, roi_id = parts[0], parts[1], parts[2]
     folder = (
-        dataset_root / partition / f"ROIs{roi_collection}" / roi_id
+        dataset_root / partition / f"ROIs{roi_num}" / roi_id
         / sensor.upper() / str(acquisition_index)
     )
     if not folder.is_dir():
         return None
     matches = sorted(folder.glob(f"*_patch_{patch_id}.tif*"))
     return matches[0] if matches else None
+
+
+def find_any_patch(
+    dataset_root: Path,
+    roi_key: str,
+) -> Tuple[Optional[Path], Optional[Path], int, int]:
+    """
+    Find the first available S1+S2 patch pair for *roi_key*.
+
+    Returns (s1_path, s2_path, acquisition_index, patch_id).
+    At least one of s1_path/s2_path will be non-None.
+    """
+    parts = [p for p in roi_key.replace("\\", "/").split("/") if p]
+    if len(parts) < 3:
+        return None, None, 0, 0
+    partition, roi_num, roi_id = parts[0], parts[1], parts[2]
+    roi_dir = dataset_root / partition / f"ROIs{roi_num}" / roi_id
+
+    # Collect acquisition indices that exist for S1 or S2
+    acq_indices = set()
+    for sensor in ("S1", "S2"):
+        sensor_dir = roi_dir / sensor
+        if sensor_dir.is_dir():
+            for acq_dir in sensor_dir.iterdir():
+                if acq_dir.is_dir() and acq_dir.name.isdigit():
+                    acq_indices.add(int(acq_dir.name))
+
+    for acq_idx in sorted(acq_indices):
+        for sensor_dir_name in ("S1", "S2"):
+            acq_dir = roi_dir / sensor_dir_name / str(acq_idx)
+            if not acq_dir.is_dir():
+                continue
+            tifs = sorted(acq_dir.glob("*.tif*"))
+            if not tifs:
+                continue
+            # Extract patch_id from the first tif found
+            m = PATCH_ID_RE.search(tifs[0].name)
+            pid = int(m.group("pid")) if m else 0
+            s1 = resolve_patch(dataset_root, roi_key, acq_idx, "S1", pid)
+            s2 = resolve_patch(dataset_root, roi_key, acq_idx, "S2", pid)
+            if s1 is not None or s2 is not None:
+                return s1, s2, acq_idx, pid
+
+    return None, None, 0, 0
 
 
 # ---------------------------------------------------------------------------
@@ -239,10 +399,21 @@ def visualize_patch(
     show: bool,
     dpi: int,
     logger: logging.Logger,
+    auto_find: bool = False,
 ) -> Optional[Path]:
     """Render S1 VV / S1 VH / S2 colour-composite for one patch; return the PNG path."""
     s1_path = resolve_patch(dataset_root, roi_key, acquisition_index, "S1", patch_id)
     s2_path = resolve_patch(dataset_root, roi_key, acquisition_index, "S2", patch_id)
+
+    # If exact acq/patch combo not found and auto_find is enabled, search for any valid patch
+    if s1_path is None and s2_path is None and auto_find:
+        logger.info(
+            "Patch (acq=%d, patch=%d) not found for ROI %s; "
+            "auto-searching for any available patch ...",
+            acquisition_index, patch_id, roi_key,
+        )
+        s1_path, s2_path, acquisition_index, patch_id = find_any_patch(dataset_root, roi_key)
+
     if s1_path is None and s2_path is None:
         logger.error(
             "No S1/S2 patch found for ROI=%s acq=%d patch=%d",
@@ -278,7 +449,7 @@ def visualize_patch(
 
     # --- S2 (optical) colour composite ---
     if s2_path is not None:
-        s2 = read_bands(s2_path, indices=color_bands)  # (3, H, W)
+        s2 = read_bands(s2_path, indices=list(color_bands))  # (3, H, W)
         axes[2].imshow(to_rgb(s2, *S2_STRETCH))
         band_names = "/".join(S2_BAND_NAMES[i] for i in color_bands)
         axes[2].set_title(f"S2 {color_label} ({band_names})", fontsize=10)
@@ -394,8 +565,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "Sentinel-1 (SAR) / Sentinel-2 (optical) dataset.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT,
-                        help="Dataset root that contains the partitions (never modified).")
+    parser.add_argument(
+        "--dataset-root", type=Path, default=None,
+        help=(
+            "Explicit path to the dataset root (the folder containing partition "
+            "directories such as 'asiaWest_n'). "
+            "When omitted the script auto-detects it by looking for a 'Dataset' "
+            "subfolder next to the project."
+        ),
+    )
     parser.add_argument("--project-root", type=Path, default=DEFAULT_PROJECT_ROOT,
                         help="Analysis folder where PNGs are written.")
     parser.add_argument("--roi-key", default=None,
@@ -419,17 +597,41 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
-    dataset_root = args.dataset_root.resolve()
     project_root = args.project_root.resolve()
     out_dir = project_root / "visualizations"
     logger = setup_logging(verbose=args.verbose)
 
     logger.info("=" * 70)
     logger.info("SEN12MS-CR-TS dataset visualization - READ ONLY")
-    logger.info("Dataset root : %s", dataset_root)
+    logger.info("Project root : %s", project_root)
     logger.info("Output folder: %s", out_dir)
+
+    # ------------------------------------------------------------------
+    # Resolve dataset root
+    # ------------------------------------------------------------------
+    if args.dataset_root is not None:
+        dataset_root = args.dataset_root.resolve()
+        logger.info("Dataset root : %s  (explicit --dataset-root)", dataset_root)
+    else:
+        # Auto-detect: look for a 'Dataset' subfolder next to the project root.
+        detected = find_dataset_root(DEFAULT_WORKSPACE_ROOT)
+        if detected is None:
+            logger.error(
+                "Could not auto-detect the dataset root under '%s'. "
+                "Expected a subfolder named 'Dataset' (or similar) containing "
+                "partition directories with ROIs* sub-directories. "
+                "Use --dataset-root to specify the path explicitly.",
+                DEFAULT_WORKSPACE_ROOT,
+            )
+            return 2
+        dataset_root = detected.resolve()
+        logger.info("Dataset root : %s  (auto-detected)", dataset_root)
+
     logger.info("=" * 70)
 
+    # ------------------------------------------------------------------
+    # Basic sanity checks
+    # ------------------------------------------------------------------
     if not dataset_root.exists():
         logger.error("Dataset root does not exist: %s", dataset_root)
         return 2
@@ -446,34 +648,73 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         logger.error("--patch-id must be zero or greater (got %d).", args.patch_id)
         return 2
 
+    # ------------------------------------------------------------------
+    # Discover ROIs and log a brief inventory summary
+    # ------------------------------------------------------------------
+    keys = list_roi_keys(dataset_root)
+    logger.info("Detected dataset structure:")
+    logger.info("  Partitions   : %s",
+                ", ".join(sorted({k.split("/")[0] for k in keys})) or "none")
+    logger.info("  ROI folders  : %d", len(keys))
+
+    if keys:
+        # Lightweight count of a sample ROI to confirm files are present
+        sample_counts = scan_tif_counts(dataset_root, keys[:1])
+        sample_key = keys[0]
+        sc = sample_counts.get(sample_key, {})
+        logger.info(
+            "  Sample ROI   : %s  ->  S1 files: %d  |  S2 files: %d",
+            sample_key, sc.get("S1", 0), sc.get("S2", 0),
+        )
+
+    # ------------------------------------------------------------------
+    # --list mode
+    # ------------------------------------------------------------------
     if args.list:
-        keys = list_roi_keys(dataset_root)
-        logger.info("Found %d ROI key(s):", len(keys))
+        logger.info("All available ROI keys (%d):", len(keys))
         for key in keys:
             logger.info("  %s", key)
         return 0
 
+    # ------------------------------------------------------------------
+    # --overview mode
+    # ------------------------------------------------------------------
     if args.overview:
         result = visualize_overview(project_root, out_dir, args.show, args.dpi, logger)
         return 0 if result else 4
 
+    # ------------------------------------------------------------------
+    # Patch visualization mode
+    # ------------------------------------------------------------------
     if not RASTERIO_AVAILABLE:
         logger.error(
             "rasterio is required to read GeoTIFF pixels. Install it with: pip install rasterio"
         )
         return 3
 
+    if not keys:
+        searched_dirs = ", ".join(
+            str(dataset_root / candidate)
+            for candidate in DATASET_SUBFOLDER_CANDIDATES
+        )
+        logger.error(
+            "No ROI folders found under: %s\n"
+            "  Expected structure: <partition>/ROIs<number>/<roi_id>/S1|S2/\n"
+            "  Searched in      : %s\n"
+            "  File extensions  : .tif, .tiff\n"
+            "  Use --dataset-root to point directly at the folder that contains "
+            "the partition directories.",
+            dataset_root,
+            searched_dirs,
+        )
+        return 5
+
     roi_key = args.roi_key
     if not roi_key:
-        keys = list_roi_keys(dataset_root)
-        if not keys:
-            logger.error("No ROI folders found under %s", dataset_root)
-            return 5
         roi_key = keys[0]
         logger.info("No --roi-key given; defaulting to %s", roi_key)
     else:
-        keys = list_roi_keys(dataset_root)
-        if keys and roi_key not in keys:
+        if roi_key not in keys:
             logger.error("Unknown --roi-key: %s", roi_key)
             logger.error("Available ROI keys:")
             for key in keys:
@@ -495,6 +736,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             show=args.show,
             dpi=args.dpi,
             logger=logger,
+            auto_find=True,   # auto-find if the requested acq/patch combo is absent
         )
     except (OSError, RuntimeError, ValueError) as exc:
         logger.error("Could not render the requested patch: %s", exc)

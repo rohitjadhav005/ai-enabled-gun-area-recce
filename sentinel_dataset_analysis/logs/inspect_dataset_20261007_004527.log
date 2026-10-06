@@ -1,0 +1,30 @@
+2026-10-07 00:45:27 | WARNING | --limit 5: only the first 5 file(s) will be inspected and the previous full inventory/reports will be OVERWRITTEN with partial data.
+2026-10-07 00:45:27 | INFO    | ======================================================================
+2026-10-07 00:45:27 | INFO    | SEN12MS-CR-TS dataset inspection (Phase 1) - READ ONLY
+2026-10-07 00:45:27 | INFO    | Dataset root : C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-07 00:45:27 | INFO    | Analysis root: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis
+2026-10-07 00:45:27 | INFO    | ======================================================================
+2026-10-07 00:45:27 | INFO    | Scanning for GeoTIFF files under: C:\Users\rohii\OneDrive\Desktop\sentineldataset
+2026-10-07 00:45:28 | INFO    | Discovered 15360 GeoTIFF file(s) in 0.46 s
+2026-10-07 00:45:28 | WARNING | Limiting scan to the first 5 file(s) (smoke-test mode).
+2026-10-07 00:45:28 | INFO    | Scanned 5 file(s) in 0.00 s (3737.8 files/s)
+2026-10-07 00:45:28 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\dataset_inventory.csv (5 rows)
+2026-10-07 00:45:28 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\roi_metadata.csv (1 rows)
+2026-10-07 00:45:28 | INFO    | Wrote table : C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata\image_relationships.csv (0 rows)
+2026-10-07 00:45:28 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\dataset_summary.txt
+2026-10-07 00:45:28 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\validation_report.txt
+2026-10-07 00:45:28 | INFO    | Wrote report: C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports\folder_structure.txt
+2026-10-07 00:45:28 | INFO    | ----------------------------------------------------------------------
+2026-10-07 00:45:28 | INFO    | INSPECTION COMPLETE
+2026-10-07 00:45:28 | INFO    | ----------------------------------------------------------------------
+2026-10-07 00:45:28 | INFO    | Files inspected        : 5
+2026-10-07 00:45:28 | INFO    | ROIs identified        : 1
+2026-10-07 00:45:28 | INFO    | Candidate SAR/optical pairs : 0
+2026-10-07 00:45:28 | INFO    | Unreadable/empty files : 0
+2026-10-07 00:45:28 | INFO    | Outputs written to:
+2026-10-07 00:45:28 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\metadata
+2026-10-07 00:45:28 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\reports
+2026-10-07 00:45:28 | INFO    |   C:\Users\rohii\OneDrive\Desktop\sentineldataset\sentinel_dataset_analysis\logs
+2026-10-07 00:45:28 | INFO    | ----------------------------------------------------------------------
+2026-10-07 00:45:28 | INFO    | Original dataset was NOT modified in any way.
+2026-10-07 00:45:28 | INFO    | Next: review reports/dataset_summary.txt before requesting Phase 2.
