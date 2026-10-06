@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEN12MS-CR-TS Dataset Viewer</title>
+  <style>
+    /* ── Reset & base ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #238636;
+      --accent2:   #1f6feb;
+      --warn:      #d29922;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --s1-color:  #58a6ff;
+      --s2-color:  #3fb950;
+      --radius:    8px;
+      --sidebar-w: 280px;
+    }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+    /* ── Layout ──────────────────────────────────────────────────── */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Topbar ──────────────────────────────────────────────────── */
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: .3px; }
+    .topbar-title span { color: var(--s2-color); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    }
+    .badge-green { background: rgba(63,185,80,.15); color: var(--s2-color); }
+    .badge-blue  { background: rgba(31,111,235,.15); color: var(--s1-color); }
+    .badge-warn  { background: rgba(210,153,34,.15); color: var(--warn); }
+
+    /* ── Sidebar sections ────────────────────────────────────────── */
+    .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-section:last-child { border-bottom: none; }
+    .section-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--muted); margin-bottom: 10px;
+    }
+
+    /* ── Form controls ───────────────────────────────────────────── */
+    select, input[type=number] {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius); padding: 7px 10px;
+      font-size: 13px; outline: none; appearance: none;
+    }
+    select:focus, input[type=number]:focus { border-color: var(--accent2); }
+
+    .btn-row { display: flex; gap: 6px; margin-top: 8px; }
+    .btn {
+      flex: 1; padding: 7px 0; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); border-radius: var(--radius);
+      cursor: pointer; font-size: 12px; font-weight: 500; transition: background .15s;
+    }
+    .btn:hover { background: var(--border); }
+    .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    .btn.primary:hover { background: #388bfd; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Acq / patch chips ───────────────────────────────────────── */
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .chip {
+      padding: 4px 10px; border-radius: 20px; font-size: 12px;
+      border: 1px solid var(--border); background: var(--surface2);
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--accent2); color: var(--accent2); }
+    .chip.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    .chip.has-s1 { border-left: 3px solid var(--s1-color); }
+    .chip.has-s2 { border-right: 3px solid var(--s2-color); }
+
+    /* ── Patch navigation ────────────────────────────────────────── */
+    .patch-nav { display: flex; align-items: center; gap: 6px; }
+    .patch-nav input { flex: 1; }
+    .patch-nav .btn { flex: none; width: 32px; font-size: 16px; }
+
+    /* ── Status bar ──────────────────────────────────────────────── */
+    .status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .stat-item { font-size: 12px; color: var(--muted); }
+    .stat-item strong { color: var(--text); }
+
+    /* ── Image viewer area ───────────────────────────────────────── */
+    .viewer-area {
+      flex: 1; padding: 20px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .panel-row { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    .img-panel {
+      flex: 1; min-width: 220px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .img-panel-header {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .img-panel-title { font-size: 13px; font-weight: 600; }
+    .img-panel-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .img-panel-body  { flex: 1; position: relative; min-height: 220px; background: #000; }
+
+    .img-panel-body img {
+      width: 100%; height: 100%; object-fit: contain;
+      display: block; min-height: 220px;
+    }
+    .img-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px; gap: 10px;
+    }
+    .img-placeholder svg { opacity: .3; }
+
+    /* spinner */
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border); border-top-color: var(--accent2);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .img-panel-footer {
+      padding: 8px 14px; border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 4px;
+    }
+    .meta-kv { font-size: 11px; color: var(--muted); }
+    .meta-kv strong { color: var(--text); display: block; font-size: 12px; }
+
+    /* ── Color mode toggle ───────────────────────────────────────── */
+    .toggle-group { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .toggle-group label {
+      flex: 1; padding: 6px 0; text-align: center; cursor: pointer;
+      font-size: 12px; font-weight: 500; transition: background .15s;
+    }
+    .toggle-group input[type=radio] { display: none; }
+    .toggle-group input[type=radio]:checked + label { background: var(--accent2); color: #fff; }
+
+    /* ── Info cards ──────────────────────────────────────────────── */
+    .info-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .info-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .kv-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12px; }
+    .kv-key  { color: var(--muted); }
+    .kv-val  { color: var(--text); word-break: break-all; }
+
+    /* ── Alert banner ────────────────────────────────────────────── */
+    .alert {
+      padding: 10px 14px; border-radius: var(--radius); font-size: 13px;
+      border-left: 4px solid; margin-bottom: 12px;
+    }
+    .alert-warn { background: rgba(210,153,34,.1); border-color: var(--warn); color: var(--warn); }
+    .alert-err  { background: rgba(248,81,73,.1);  border-color: #f85149; color: #f85149; }
+
+    /* ── Scrollbar ───────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; min-width: 0; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+  <aside class="sidebar">
+
+    <!-- Dataset info -->
+    <div class="sidebar-section">
+      <div class="section-label">Dataset</div>
+      <div id="ds-root" class="stat-item" style="margin-bottom:8px;word-break:break-all;">
+        <strong>Loading…</strong>
+      </div>
+      <div class="status-row">
+        <div class="stat-item">ROIs: <strong id="ds-roi-count">–</strong></div>
+        <div class="stat-item" id="ds-rasterio-badge"></div>
+      </div>
+    </div>
+
+    <!-- ROI selector -->
+    <div class="sidebar-section">
+      <div class="section-label">Region of Interest</div>
+      <select id="sel-roi">
+        <option value="">Loading ROIs…</option>
+      </select>
+    </div>
+
+    <!-- Acquisition selector -->
+    <div class="sidebar-section">
+      <div class="section-label">Acquisition (time-step)</div>
+      <div id="acq-chips" class="chip-grid">
+        <span class="stat-item">Select a ROI first.</span>
+      </div>
+    </div>
+
+    <!-- Patch navigation -->
+    <div class="sidebar-section">
+      <div class="section-label">Patch ID</div>
+      <div class="patch-nav">
+        <button class="btn" id="btn-patch-prev" disabled>‹</button>
+        <input type="number" id="inp-patch" min="0" value="0" />
+        <button class="btn" id="btn-patch-next" disabled>›</button>
+      </div>
+      <div id="patch-range" class="stat-item" style="margin-top:6px;">Select an acquisition.</div>
+    </div>
+
+    <!-- Color mode -->
+    <div class="sidebar-section">
+      <div class="section-label">S2 Color Mode</div>
+      <div class="toggle-group">
+        <input type="radio" name="color" id="color-true" value="s2_true" checked />
+        <label for="color-true">True Color</label>
+        <input type="radio" name="color" id="color-false" value="s2_false" />
+        <label for="color-false">False Color</label>
+      </div>
+    </div>
+
+    <!-- Load button -->
+    <div class="sidebar-section">
+      <button class="btn primary" id="btn-load" disabled>Load Patch</button>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <span class="topbar-title">SEN12MS-CR-TS <span>Dataset Viewer</span></span>
+      <span class="badge badge-green">READ ONLY</span>
+    </div>
+
+    <!-- Viewer -->
+    <div class="viewer-area">
+
+      <!-- Alert area -->
+      <div id="alert-area"></div>
+
+      <!-- Current selection info -->
+      <div class="info-card" id="info-card" style="display:none;">
+        <h3>Current Selection</h3>
+        <div class="kv-grid" id="info-kv"></div>
+      </div>
+
+      <!-- Three image panels -->
+      <div class="panel-row">
+
+        <!-- S1 VV -->
+        <div class="img-panel" id="panel-s1vv">
+          <div class="img-panel-header">
+            <div>
+              <div class="img-panel-title">
+                <span class="badge badge-blue" style="margin-right:6px;">S1</span>VV — SAR Backscatter
+              </div>
+              <div class="img-panel-sub">C-band, VV polarisation · dB · grayscale</div>
+            </div>
+          </div>
+          <div class="img-panel-body" id="body-s1vv">
+            <div class="img-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Select a patch and click Load</span>
+            </div>
+          </div>
+          <div class="img-panel-footer" id="footer-s1vv" style="display:none;">
+            <div class="meta-kv"><strong id="s1-date">–</strong>Date</div>
+            <div class="meta-kv"><strong id="s1-size">–</strong>Dimensions</div>
+            <div class="meta-kv"><strong id="s1-bands">–</strong>Bands</div>
+          </div>
+        </div>
+
+        <!-- S1 VH -->
+        <div class="img-panel" id="panel-s1vh">
+          <div class="img-panel-header">
+            <div>
+              <div class="img-panel-title">
+                <span class="badge badge-blue" style="margin-right:6px;">S1</span>VH — SAR Backscatter
+              </div>
+              <div class="img-panel-sub">C-band, VH polarisation · dB · grayscale</div>
+            </div>
+          </div>
+          <div class="img-panel-body" id="body-s1vh">
+            <div class="img-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Select a patch and click Load</span>
+            </div>
+          </div>
+          <div class="img-panel-footer" id="footer-s1vh" style="display:none;">
+            <div class="meta-kv"><strong id="s1vh-date">–</strong>Date</div>
+            <div class="meta-kv"><strong id="s1vh-size">–</strong>Dimensions</div>
+            <div class="meta-kv"><strong id="s1vh-bands">–</strong>Bands</div>
+          </div>
+        </div>
+
+        <!-- S2 -->
+        <div class="img-panel" id="panel-s2">
+          <div class="img-panel-header">
+            <div>
+              <div class="img-panel-title">
+                <span class="badge badge-green" style="margin-right:6px;">S2</span>
+                <span id="s2-panel-label">True Color RGB</span>
+              </div>
+              <div class="img-panel-sub" id="s2-panel-sub">B4/B3/B2 · 2–98% stretch</div>
+            </div>
+          </div>
+          <div class="img-panel-body" id="body-s2">
+            <div class="img-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Select a patch and click Load</span>
+            </div>
+          </div>
+          <div class="img-panel-footer" id="footer-s2" style="display:none;">
+            <div class="meta-kv"><strong id="s2-date">–</strong>Date</div>
+            <div class="meta-kv"><strong id="s2-size">–</strong>Dimensions</div>
+            <div class="meta-kv"><strong id="s2-bands">–</strong>Bands</div>
+          </div>
+        </div>
+
+      </div><!-- /panel-row -->
+    </div><!-- /viewer-area -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+/* ── State ──────────────────────────────────────────────────────────────── */
+const state = {
+  rois: [],
+  acquisitions: [],
+  patchIds: [],
+  selectedRoi: null,
+  selectedAcq: null,
+  selectedPatch: 0,
+  colorMode: 's2_true',
+  loading: false,
+};
+
+/* ── DOM refs ────────────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const selRoi    = $('sel-roi');
+const acqChips  = $('acq-chips');
+const inpPatch  = $('inp-patch');
+const btnPrev   = $('btn-patch-prev');
+const btnNext   = $('btn-patch-next');
+const btnLoad   = $('btn-load');
+const patchRange = $('patch-range');
+const alertArea = $('alert-area');
+const infoCard  = $('info-card');
+const infoKv    = $('info-kv');
+
+/* ── Utility ─────────────────────────────────────────────────────────────── */
+function showAlert(msg, type='warn') {
+  alertArea.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+function clearAlert() { alertArea.innerHTML = ''; }
+
+function setBodyLoading(id) {
+  $(id).innerHTML = '<div class="img-placeholder"><div class="spinner"></div><span>Loading…</span></div>';
+}
+
+function setBodyImg(bodyId, footerId, src) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.onerror = () => {
+    $(bodyId).innerHTML = '<div class="img-placeholder"><span style="color:#f85149;">Failed to load image.</span></div>';
+  };
+  $(bodyId).innerHTML = '';
+  $(bodyId).appendChild(img);
+  $(footerId).style.display = '';
+}
+
+function setBodyPlaceholder(id) {
+  $(id).innerHTML = `<div class="img-placeholder">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
+    <span>Not available for this patch</span></div>`;
+}
+
+/* ── API helpers ─────────────────────────────────────────────────────────── */
+async function apiFetch(url) {
+  const r = await fetch(url);
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({error: r.statusText}));
+    throw new Error(j.error || r.statusText);
+  }
+  return r.json();
+}
+
+/* ── Boot: load status + ROI list ────────────────────────────────────────── */
+async function boot() {
+  try {
+    const status = await apiFetch('/api/status');
+    $('ds-root').innerHTML = `<strong style="font-size:11px;word-break:break-all;">${status.dataset_root || 'unknown'}</strong>`;
+    $('ds-roi-count').textContent = status.roi_count ?? '–';
+    $('ds-rasterio-badge').innerHTML = status.rasterio
+      ? '<span class="badge badge-green">rasterio ✓</span>'
+      : '<span class="badge badge-warn">rasterio ✗</span>';
+
+    if (!status.rasterio) {
+      showAlert('rasterio is not installed — images cannot be loaded. Run: <code>pip install rasterio</code>', 'warn');
+    }
+
+    const data = await apiFetch('/api/rois');
+    state.rois = data.rois;
+    selRoi.innerHTML = '<option value="">— choose a ROI —</option>' +
+      data.rois.map(r =>
+        `<option value="${r.key}">${r.key}</option>`
+      ).join('');
+  } catch(e) {
+    showAlert(`Failed to contact backend: ${e.message}`, 'err');
+  }
+}
+
+/* ── ROI selected ────────────────────────────────────────────────────────── */
+selRoi.addEventListener('change', async () => {
+  state.selectedRoi = selRoi.value || null;
+  state.selectedAcq = null;
+  state.patchIds = [];
+  btnLoad.disabled = true;
+  btnPrev.disabled = true;
+  btnNext.disabled = true;
+  patchRange.textContent = 'Select an acquisition.';
+  infoCard.style.display = 'none';
+
+  acqChips.innerHTML = '<div class="img-placeholder" style="position:static;padding:4px 0;"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div></div>';
+
+  if (!state.selectedRoi) {
+    acqChips.innerHTML = '<span class="stat-item">Select a ROI first.</span>';
+    return;
+  }
+
+  try {
+    const data = await apiFetch(`/api/rois/${encodeURIComponent(state.selectedRoi)}/acquisitions`);
+    state.acquisitions = data.acquisitions;
+    renderAcqChips();
+  } catch(e) {
+    acqChips.innerHTML = `<span style="color:#f85149;font-size:12px;">${e.message}</span>`;
+  }
+});
+
+function renderAcqChips() {
+  if (!state.acquisitions.length) {
+    acqChips.innerHTML = '<span class="stat-item">No acquisitions found.</span>';
+    return;
+  }
+  acqChips.innerHTML = state.acquisitions.map(a => {
+    const classes = ['chip',
+      a.has_s1 ? 'has-s1' : '',
+      a.has_s2 ? 'has-s2' : '',
+      state.selectedAcq === a.index ? 'active' : ''
+    ].filter(Boolean).join(' ');
+    const tip = [a.s1_date && `S1: ${a.s1_date}`, a.s2_date && `S2: ${a.s2_date}`].filter(Boolean).join(' | ');
+    return `<div class="${classes}" data-idx="${a.index}" title="${tip}">Acq ${a.index}</div>`;
+  }).join('');
+
+  acqChips.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => selectAcq(parseInt(chip.dataset.idx)));
+  });
+}
+
+/* ── Acquisition selected ────────────────────────────────────────────────── */
+async function selectAcq(idx) {
+  state.selectedAcq = idx;
+  renderAcqChips(); // re-render to update active chip
+
+  patchRange.textContent = 'Loading patches…';
+  btnPrev.disabled = true;
+  btnNext.disabled = true;
+  btnLoad.disabled = true;
+
+  try {
+    const data = await apiFetch(
+      `/api/rois/${encodeURIComponent(state.selectedRoi)}/acquisitions/${idx}/patches`
+    );
+    state.patchIds = data.patch_ids;
+    if (!state.patchIds.length) {
+      patchRange.textContent = 'No patches found.';
+      return;
+    }
+    const min = state.patchIds[0];
+    const max = state.patchIds[state.patchIds.length - 1];
+    patchRange.textContent = `${data.count} patches  (${min} – ${max})`;
+    inpPatch.min = min;
+    inpPatch.max = max;
+    inpPatch.value = min;
+    state.selectedPatch = min;
+    btnPrev.disabled = false;
+    btnNext.disabled = false;
+    btnLoad.disabled = false;
+  } catch(e) {
+    patchRange.textContent = `Error: ${e.message}`;
+  }
+}
+
+/* ── Patch navigation ────────────────────────────────────────────────────── */
+inpPatch.addEventListener('change', () => {
+  state.selectedPatch = parseInt(inpPatch.value) || 0;
+});
+
+btnPrev.addEventListener('click', () => {
+  const cur = parseInt(inpPatch.value);
+  const idx = state.patchIds.indexOf(cur);
+  if (idx > 0) {
+    inpPatch.value = state.patchIds[idx - 1];
+    state.selectedPatch = state.patchIds[idx - 1];
+  }
+});
+
+btnNext.addEventListener('click', () => {
+  const cur = parseInt(inpPatch.value);
+  const idx = state.patchIds.indexOf(cur);
+  if (idx >= 0 && idx < state.patchIds.length - 1) {
+    inpPatch.value = state.patchIds[idx + 1];
+    state.selectedPatch = state.patchIds[idx + 1];
+  }
+});
+
+/* ── Color mode ──────────────────────────────────────────────────────────── */
+document.querySelectorAll('input[name=color]').forEach(r => {
+  r.addEventListener('change', () => {
+    state.colorMode = r.value;
+    const isTrue = r.value === 's2_true';
+    $('s2-panel-label').textContent = isTrue ? 'True Color RGB' : 'False Color RGB';
+    $('s2-panel-sub').textContent   = isTrue ? 'B4/B3/B2 · 2–98% stretch' : 'B8/B4/B3 · NIR composite';
+  });
+});
+
+/* ── Load patch ──────────────────────────────────────────────────────────── */
+btnLoad.addEventListener('click', loadPatch);
+
+async function loadPatch() {
+  if (!state.selectedRoi || state.selectedAcq === null) return;
+  clearAlert();
+
+  const roi   = state.selectedRoi;
+  const acq   = state.selectedAcq;
+  const patch = parseInt(inpPatch.value);
+  const color = state.colorMode;
+
+  const base = `/api/image?roi_key=${encodeURIComponent(roi)}&acq=${acq}&patch=${patch}`;
+
+  // Show loading spinners
+  ['body-s1vv','body-s1vh','body-s2'].forEach(setBodyLoading);
+  ['footer-s1vv','footer-s1vh','footer-s2'].forEach(id => $(id).style.display = 'none');
+
+  // Update info card
+  infoCard.style.display = '';
+  infoKv.innerHTML = `
+    <span class="kv-key">ROI Key</span>   <span class="kv-val">${roi}</span>
+    <span class="kv-key">Acquisition</span><span class="kv-val">${acq}</span>
+    <span class="kv-key">Patch ID</span>  <span class="kv-val">${patch}</span>
+    <span class="kv-key">Color Mode</span><span class="kv-val">${color === 's2_true' ? 'True Color (B4/B3/B2)' : 'False Color (B8/B4/B3)'}</span>
+  `;
+
+  // Load metadata
+  try {
+    const meta = await apiFetch(`/api/image/metadata?roi_key=${encodeURIComponent(roi)}&acq=${acq}&patch=${patch}`);
+
+    if (meta.s1) {
+      $('s1-date').textContent    = meta.s1.date || '–';
+      $('s1-size').textContent    = `${meta.s1.width}×${meta.s1.height}`;
+      $('s1-bands').textContent   = meta.s1.bands + ' bands';
+      $('s1vh-date').textContent  = meta.s1.date || '–';
+      $('s1vh-size').textContent  = `${meta.s1.width}×${meta.s1.height}`;
+      $('s1vh-bands').textContent = meta.s1.bands + ' bands';
+    }
+    if (meta.s2) {
+      $('s2-date').textContent  = meta.s2.date || '–';
+      $('s2-size').textContent  = `${meta.s2.width}×${meta.s2.height}`;
+      $('s2-bands').textContent = meta.s2.bands + ' bands';
+    }
+  } catch(_) { /* metadata is optional */ }
+
+  // Load images in parallel – a 404 from the server means that sensor is absent
+  const views = [
+    { view: 's1_vv', bodyId: 'body-s1vv', footerId: 'footer-s1vv' },
+    { view: 's1_vh', bodyId: 'body-s1vh', footerId: 'footer-s1vh' },
+    { view: color,   bodyId: 'body-s2',   footerId: 'footer-s2'   },
+  ];
+
+  await Promise.all(views.map(({ view, bodyId, footerId }) =>
+    checkAndLoadImage(`${base}&view=${view}`, bodyId, footerId)
+  ));
+}
+
+async function checkAndLoadImage(url, bodyId, footerId) {
+  // Probe the URL first so we can show a "not available" state on 404
+  const r = await fetch(url);
+  if (!r.ok) {
+    setBodyPlaceholder(bodyId);
+    $(footerId).style.display = 'none';
+    return;
+  }
+  // URL is valid – pass it to an <img> element (browser caches the fetch)
+  setBodyImg(bodyId, footerId, url);
+}
+
+/* ── Start ───────────────────────────────────────────────────────────────── */
+boot();
+</script>
+</body>
+</html>
